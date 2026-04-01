@@ -31,7 +31,8 @@ window.CONTENT = {
 
     photos: {
       title: "Level 1: Our little album",
-      subtitle: "Tap the card to go to the next photo.",
+      subtitle: "Sit back — the album plays automatically.",
+      slideDurationMs: 3000,
       cards: [
         { src: "./assets/photos/us-together.jpeg", alt: "Us together", caption: "Us, always." },
         { src: "./assets/photos/us-at-the-beach.jpeg", alt: "Us at the beach", caption: "Sun, sand, and you." },
@@ -96,7 +97,7 @@ window.CONTENT = {
       title: "Final level: Your surprise",
       subtitle:
         "One step at a time: claim the playlist, watch the moments, let the code run, then open your voucher. (Reset starts you over.)",
-      phaseSubtitleVideos: "Part 1 — watch (or skip ahead on the last clip). When you’re done, tap Continue.",
+      phaseSubtitleVideos: "Part 1 — each clip starts when the last one ends. On the last clip, tap Continue when you’re ready.",
       phaseSubtitleCode: "Part 2 — let it compile. The next screen unlocks when it’s finished.",
       phaseSubtitleVoucher: "Part 3 — your game cover is below. Tap it when you’re ready for the real voucher.",
       phaseSubtitleDone: "Here’s your voucher — happy birthday.",
@@ -117,6 +118,8 @@ window.CONTENT = {
       voucherTicketSrc: "./assets/photos/game-voucher.jpeg",
       voucherTicketAlt: "Your Split Fiction voucher",
       voucherRevealCta: "Click to reveal voucher",
+      pauseAfterVideosMs: 2000,
+      pauseAfterCodeMs: 1800,
       givenByLabel: "Given by",
       givenByName: "AWELEWA",
       resetButton: "Reset quest",
@@ -127,16 +130,12 @@ window.CONTENT = {
           title: "A video of you",
         },
         {
-          src: "https://res.cloudinary.com/dfw7cyzig/video/upload/q_auto/f_auto/v1775057481/sipandpaint_hyf9uc.mp4",
-          title: "Sip & Paint",
+          src: "https://res.cloudinary.com/dfw7cyzig/video/upload/q_auto/f_auto/v1775079212/slideshow-video-of-us_eglcfs.mp4",
+          title: "Slideshow of us",
         },
         {
-          src: "https://res.cloudinary.com/dfw7cyzig/video/upload/q_auto/f_auto/v1775057481/datenight_pjjjal.mp4",
-          title: "Date Night",
-        },
-        {
-          src: "https://res.cloudinary.com/dfw7cyzig/video/upload/q_auto/f_auto/v1775073251/random-video-of-us_znixd6.mp4",
-          title: "Random video of us",
+          src: "https://res.cloudinary.com/dfw7cyzig/video/upload/q_auto/f_auto/v1775079210/in-the-car_w3z5lc.mp4",
+          title: "In the car",
         },
       ],
     },

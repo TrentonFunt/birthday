@@ -22,6 +22,22 @@ const RISE_KEYFRAMES = `
 
 let celebrationPending = false;
 let voucherRevealTimer = null;
+let photosSlideTimer = null;
+let finalPhasePauseTimer = null;
+
+function clearPhotosSlideTimer() {
+  if (photosSlideTimer) {
+    window.clearTimeout(photosSlideTimer);
+    photosSlideTimer = null;
+  }
+}
+
+function clearFinalPhasePauseTimer() {
+  if (finalPhasePauseTimer) {
+    window.clearTimeout(finalPhasePauseTimer);
+    finalPhasePauseTimer = null;
+  }
+}
 
 function ensureKeyframes() {
   if (document.getElementById("birthdayQuestKeyframes")) return;
@@ -400,6 +416,8 @@ function prevScreenId() {
 
 function resetQuest() {
   celebrationPending = false;
+  clearPhotosSlideTimer();
+  clearFinalPhasePauseTimer();
   if (voucherRevealTimer) {
     window.clearTimeout(voucherRevealTimer);
     voucherRevealTimer = null;
@@ -627,6 +645,7 @@ function renderPhotos() {
   const cards = Array.isArray(cfg.cards) ? cfg.cards : [];
   const idx = clamp(state.photos.idx || 0, 0, Math.max(0, cards.length - 1));
   const card = cards[idx] || { src: "", alt: "Photo", caption: "" };
+  const slideMs = Math.max(2000, typeof cfg.slideDurationMs === "number" ? cfg.slideDurationMs : 5000);
 
   const media = el("div", { class: "bg-black/20 flex items-center justify-center" });
   if (card.src) {
@@ -636,6 +655,7 @@ function renderPhotos() {
         alt: card.alt || "Photo",
         class: "w-full max-h-[50vh] object-contain",
         loading: "lazy",
+        decoding: "async",
       })
     );
   } else {
@@ -645,9 +665,9 @@ function renderPhotos() {
   const footer = el("div", { class: "px-3 py-3 sm:p-4 flex items-end justify-between gap-2 sm:gap-3" }, [
     el("div", { class: "min-w-0" }, [
       el("div", { class: "text-[12px] sm:text-[13px] text-[var(--c-neutral)]/60", text: `Photo ${cards.length ? idx + 1 : 0}/${cards.length}` }),
-      el("div", { class: "text-base sm:text-lg font-bold tracking-wide text-[var(--c-neutral)] truncate", text: card.caption || "Tap to continue" }),
+      el("div", { class: "text-base sm:text-lg font-bold tracking-wide text-[var(--c-neutral)] truncate", text: card.caption || "" }),
     ]),
-    el("div", { class: "text-[12px] sm:text-[13px] text-[var(--c-neutral)]/60 shrink-0" }, state.photos.done ? "Done" : "Tap"),
+    el("div", { class: "text-[12px] sm:text-[13px] text-[var(--c-bright)]/80 shrink-0 font-mono uppercase tracking-wider" }, state.photos.done ? "Done" : "Auto"),
   ]);
 
   const photoMotion = "animate-[photoPop_520ms_cubic-bezier(0.22,1,0.36,1)_both]";
@@ -660,23 +680,10 @@ function renderPhotos() {
     stage.appendChild(media);
     stage.appendChild(footer);
   } else {
-    stage = el("button", {
-      type: "button",
-      class: `w-full text-left overflow-hidden rounded-2xl active:translate-y-px transition-transform duration-200 ${photoMotion}`,
-      onClick: () => {
-        const next = idx + 1;
-        if (next < cards.length) {
-          state.photos.idx = next;
-          saveState();
-          render();
-          return;
-        }
-        state.photos.done = true;
-        markCompleted("photos");
-        saveState();
-        render();
-      },
-      "aria-label": "Next photo",
+    stage = el("div", {
+      class: `w-full overflow-hidden rounded-2xl ${photoMotion}`,
+      "aria-label": "Slideshow",
+      role: "region",
     });
     stage.appendChild(media);
     stage.appendChild(footer);
@@ -684,7 +691,7 @@ function renderPhotos() {
 
   const doneHint = state.photos.done
     ? el("div", { class: "text-[13px] text-emerald-200/70" }, "Album complete.")
-    : el("div", { class: "text-[13px] text-[var(--c-neutral)]/60" }, "Tap the card to go to the next photo.");
+    : el("div", { class: "text-[13px] text-[var(--c-neutral)]/60" }, "Photos advance automatically.");
 
   const nextBtn = state.photos.done
     ? el(
@@ -709,6 +716,21 @@ function renderPhotos() {
   wrap.appendChild(applyStagger(stage, si++));
   wrap.appendChild(applyStagger(doneHint, si++));
   if (nextBtn) wrap.appendChild(applyStagger(el("div", { class: "flex flex-wrap items-center gap-3" }, [nextBtn]), si++));
+
+  if (!state.photos.done && cards.length > 0) {
+    photosSlideTimer = window.setTimeout(() => {
+      photosSlideTimer = null;
+      const next = idx + 1;
+      if (next < cards.length) {
+        state.photos.idx = next;
+      } else {
+        state.photos.done = true;
+        markCompleted("photos");
+      }
+      saveState();
+      render();
+    }, slideMs);
+  }
 
   return wrap;
 }
@@ -926,6 +948,10 @@ function renderFinal() {
   const ticketSrc = cfg.voucherTicketSrc || cfg.voucherImageSrc;
   const coverSrc = cfg.voucherImageSrc;
   const videoList = Array.isArray(cfg.videos) ? cfg.videos : [];
+  const pauseAfterVideosMs =
+    typeof cfg.pauseAfterVideosMs === "number" ? Math.max(0, cfg.pauseAfterVideosMs) : 1800;
+  const pauseAfterCodeMs =
+    typeof cfg.pauseAfterCodeMs === "number" ? Math.max(0, cfg.pauseAfterCodeMs) : 1800;
 
   function finishVideosPhase() {
     state.final.videosComplete = true;
@@ -937,6 +963,18 @@ function renderFinal() {
     }
     saveState();
     render();
+  }
+
+  function scheduleFinishVideosPhase() {
+    clearFinalPhasePauseTimer();
+    if (pauseAfterVideosMs === 0) {
+      finishVideosPhase();
+      return;
+    }
+    finalPhasePauseTimer = window.setTimeout(() => {
+      finalPhasePauseTimer = null;
+      finishVideosPhase();
+    }, pauseAfterVideosMs);
   }
 
   function revealVoucherFromCover() {
@@ -973,7 +1011,7 @@ function renderFinal() {
               class:
                 "inline-flex justify-center rounded-2xl border border-[var(--c-bright)]/50 bg-[var(--c-bright)]/14 px-4 py-2.5 font-semibold text-[var(--c-neutral)] hover:border-[var(--c-bright)]/70",
               type: "button",
-              onClick: () => finishVideosPhase(),
+              onClick: () => scheduleFinishVideosPhase(),
             },
             cfg.continueAfterVideosCta || "Continue"
           ),
@@ -991,17 +1029,22 @@ function renderFinal() {
     const video = el("video", {
       controls: "controls",
       playsinline: "playsinline",
-      preload: "metadata",
+      preload: "auto",
+      autoplay: "autoplay",
       src: v.src,
       title: v.title || "Video",
       ...(poster ? { poster: poster } : {}),
     });
     video.className = "w-full max-h-[50vh] block bg-black";
 
+    video.addEventListener("loadeddata", () => {
+      video.play().catch(() => {});
+    });
+
     video.addEventListener("ended", () => {
       const next = vIdx + 1;
       if (next >= list.length) {
-        finishVideosPhase();
+        scheduleFinishVideosPhase();
         return;
       }
       state.final.videoIdx = next;
@@ -1034,7 +1077,7 @@ function renderFinal() {
             class:
               "inline-flex items-center justify-center rounded-xl sm:rounded-2xl border border-[var(--c-bright)]/55 bg-[var(--c-bright)]/14 px-3 py-1.5 sm:px-4 sm:py-2 text-sm sm:text-base font-semibold tracking-wide text-[var(--c-neutral)] hover:border-[var(--c-bright)]/75 hover:bg-[var(--c-bright)]/22 active:translate-y-px",
             type: "button",
-            onClick: () => finishVideosPhase(),
+            onClick: () => scheduleFinishVideosPhase(),
           },
           cfg.continueAfterVideosCta || "Continue"
         )
@@ -1296,9 +1339,19 @@ function renderFinal() {
   if (momentsClaimed && videosComplete && !codeComplete) {
     window.setTimeout(() => {
       mountLoveCodeBlock(() => {
-        state.final.codeComplete = true;
-        saveState();
-        render();
+        clearFinalPhasePauseTimer();
+        if (pauseAfterCodeMs === 0) {
+          state.final.codeComplete = true;
+          saveState();
+          render();
+          return;
+        }
+        finalPhasePauseTimer = window.setTimeout(() => {
+          finalPhasePauseTimer = null;
+          state.final.codeComplete = true;
+          saveState();
+          render();
+        }, pauseAfterCodeMs);
       });
     }, 60);
   }
@@ -1362,6 +1415,12 @@ function render() {
   card.appendChild(renderTopbar());
 
   const content = el("div", { class: "relative z-[2] px-3.5 py-4 sm:px-6 sm:py-6" });
+  if (state.current !== "photos") {
+    clearPhotosSlideTimer();
+  }
+  if (state.current !== "final") {
+    clearFinalPhasePauseTimer();
+  }
   content.appendChild(renderScreen());
 
   const nav = renderNavRow();
