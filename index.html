@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#6c9a8b" />
+    <title>Happy Birthday</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=JetBrains+Mono:wght@500;600&family=Outfit:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./assets/tailwind.css" />
+    <script defer src="./content.js"></script>
+    <script defer src="./app.js"></script>
+  </head>
+  <body class="min-h-dvh overflow-x-hidden font-sans text-(--c-neutral) bg-transparent antialiased">
+    <div
+      class="fixed inset-0 z-0 pointer-events-none opacity-15"
+      aria-hidden="true"
+      style="
+        background-image: linear-gradient(to right, rgba(238,210,204,.14) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(232,153,141,.1) 1px, transparent 1px);
+        background-size: 44px 44px;
+        -webkit-mask-image: radial-gradient(680px 480px at 45% 30%, #000 0%, transparent 72%);
+        mask-image: radial-gradient(680px 480px at 45% 30%, #000 0%, transparent 72%);
+      "
+    ></div>
+
+    <main class="min-h-dvh flex items-center justify-center px-3 py-5 pb-10 sm:p-8 sm:pb-14" id="app" aria-live="polite"></main>
+
+    <noscript>
+      <div class="fixed bottom-4 left-4 right-4 rounded-2xl border border-(--c-bright)/25 bg-(--c-dark)/95 px-4 py-3 text-center text-(--c-neutral)/85">
+        This surprise needs JavaScript enabled.
+      </div>
+    </noscript>
+  </body>
+</html>
