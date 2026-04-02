@@ -589,7 +589,9 @@ function renderNote(noteId) {
   let i = 0;
   wrap.appendChild(applyStagger(el("h2", { class: "text-2xl sm:text-3xl md:text-4xl font-bold leading-tight tracking-wide text-[var(--c-neutral)]", text: cfg.title }), i++));
   wrap.appendChild(applyStagger(el("p", { class: "text-sm sm:text-base leading-relaxed text-[var(--c-neutral)]/80", text: cfg.body }), i++));
-  wrap.appendChild(applyStagger(el("div", { class: "flex flex-wrap items-center gap-3" }, [btn]), i++));
+  wrap.appendChild(
+    applyStagger(el("div", { class: "quest-single-cta flex flex-wrap items-center gap-3" }, [btn]), i++)
+  );
   return wrap;
 }
 
@@ -666,23 +668,22 @@ function renderGate() {
     status.textContent = "Nope. Try again.";
   }
 
-  const actions = el("div", { class: "flex flex-wrap items-center gap-3" }, [
+  const actions = el("div", { class: "grid w-full grid-cols-2 gap-3 items-stretch" }, [
     el(
       "button",
       {
         class:
-          "inline-flex items-center justify-center rounded-2xl border border-[var(--c-bright)]/40 bg-transparent px-4 py-3 font-semibold tracking-wide text-[var(--c-neutral)] hover:border-[var(--c-bright)]/70 hover:bg-[var(--c-bright)]/12 active:translate-y-px disabled:opacity-50",
+          "inline-flex items-center justify-center rounded-2xl border border-[var(--c-bright)]/40 bg-transparent px-4 py-3 font-semibold tracking-wide text-[var(--c-neutral)] hover:border-[var(--c-bright)]/70 hover:bg-[var(--c-bright)]/12 active:translate-y-px disabled:opacity-50 min-w-0",
         onClick: attempt,
         type: "button",
       },
       "Unlock"
     ),
-    el("div", { class: "flex-1" }),
     el(
       "button",
       {
         class:
-          "inline-flex items-center justify-center rounded-2xl border border-rose-200/15 bg-rose-500/10 px-4 py-3 font-semibold tracking-wide text-[var(--c-neutral)] hover:border-rose-200/25 hover:bg-rose-500/15 active:translate-y-px",
+          "inline-flex items-center justify-center rounded-2xl border border-rose-200/15 bg-rose-500/10 px-4 py-3 font-semibold tracking-wide text-[var(--c-neutral)] hover:border-rose-200/25 hover:bg-rose-500/15 active:translate-y-px min-w-0",
         onClick: resetQuest,
         type: "button",
       },
@@ -746,7 +747,9 @@ function renderIntro() {
   );
   wrap.appendChild(applyStagger(el("p", { class: "text-sm sm:text-base leading-relaxed text-[var(--c-neutral)]/80", text: intro.subtitle }), si++));
   wrap.appendChild(applyStagger(pills, si++));
-  wrap.appendChild(applyStagger(el("div", { class: "flex flex-wrap items-center gap-3" }, [btn]), si++));
+  wrap.appendChild(
+    applyStagger(el("div", { class: "quest-single-cta flex flex-wrap items-center gap-3" }, [btn]), si++)
+  );
   wrap.appendChild(
     applyStagger(el("div", { class: "text-[13px] text-[var(--c-neutral)]/60", text: `— from ${CONTENT.person.from}` }), si++)
   );
@@ -840,7 +843,11 @@ function renderPhotos() {
   wrap.appendChild(applyStagger(el("p", { class: "text-sm sm:text-base leading-relaxed text-[var(--c-neutral)]/80", text: cfg.subtitle }), si++));
   wrap.appendChild(applyStagger(stage, si++));
   wrap.appendChild(applyStagger(doneHint, si++));
-  if (nextBtn) wrap.appendChild(applyStagger(el("div", { class: "flex flex-wrap items-center gap-3" }, [nextBtn]), si++));
+  if (nextBtn) {
+    wrap.appendChild(
+      applyStagger(el("div", { class: "quest-single-cta flex flex-wrap items-center gap-3" }, [nextBtn]), si++)
+    );
+  }
 
   return wrap;
 }
@@ -953,7 +960,7 @@ function renderLevel2() {
     "button",
     {
       class:
-        "inline-flex items-center justify-center rounded-2xl border border-[var(--c-bright)]/40 bg-transparent px-4 py-3 font-semibold tracking-wide text-[var(--c-neutral)] hover:border-[var(--c-bright)]/70 hover:bg-[var(--c-bright)]/12 active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed",
+        "inline-flex min-w-0 flex-1 items-center justify-center rounded-2xl border border-[var(--c-bright)]/40 bg-transparent px-4 py-3 font-semibold tracking-wide text-[var(--c-neutral)] hover:border-[var(--c-bright)]/70 hover:bg-[var(--c-bright)]/12 active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed",
       type: "button",
       disabled: !already,
       onClick: () => {
@@ -969,7 +976,7 @@ function renderLevel2() {
     "button",
     {
       class:
-        "inline-flex items-center justify-center rounded-2xl border border-[var(--c-bright)]/40 bg-transparent px-4 py-3 font-semibold tracking-wide text-[var(--c-neutral)] hover:border-[var(--c-bright)]/70 hover:bg-[var(--c-bright)]/12 active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed",
+        "inline-flex min-w-0 flex-1 items-center justify-center rounded-2xl border border-[var(--c-bright)]/40 bg-transparent px-4 py-3 font-semibold tracking-wide text-[var(--c-neutral)] hover:border-[var(--c-bright)]/70 hover:bg-[var(--c-bright)]/12 active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed",
       type: "button",
       disabled: !shouldUnlockNextForCurrent(),
       onClick: () => goTo("note2"),
@@ -981,7 +988,7 @@ function renderLevel2() {
     el("p", { class: "font-bold m-0 text-base", text: q.q }),
     choices,
     feedback,
-    el("div", { class: "flex flex-wrap items-center gap-3" }, [nextQBtn, el("div", { class: "flex-1" }), finishBtn]),
+    el("div", { class: "flex w-full flex-nowrap items-stretch gap-3" }, [nextQBtn, finishBtn]),
   ]);
 
   const wrap = el("div", { class: "grid gap-4" }, []);
@@ -1045,7 +1052,9 @@ function renderLevel3() {
   wrap.appendChild(applyStagger(el("h2", { class: "text-2xl sm:text-3xl md:text-4xl font-bold leading-tight tracking-wide text-[var(--c-neutral)]", text: cfg.title }), si++));
   wrap.appendChild(applyStagger(el("p", { class: "text-sm sm:text-base leading-relaxed text-[var(--c-neutral)]/80", text: cfg.subtitle }), si++));
   wrap.appendChild(applyStagger(list, si++));
-  wrap.appendChild(applyStagger(el("div", { class: "flex flex-wrap items-center gap-3" }, [nextBtn]), si++));
+  wrap.appendChild(
+    applyStagger(el("div", { class: "quest-single-cta flex flex-wrap items-center gap-3" }, [nextBtn]), si++)
+  );
   return wrap;
 }
 
@@ -1223,10 +1232,11 @@ function renderFinal() {
           },
           "Next"
         );
-    const controls = el("div", { class: "px-3 py-2 sm:px-4 sm:py-2.5 flex flex-wrap items-center gap-2 sm:gap-3 bg-black/15" }, [
+    prevBtn.classList.add("min-w-0", "flex-1");
+    advanceBtn.classList.add("min-w-0", "flex-1");
+    const controls = el("div", { class: "px-3 py-2 sm:px-4 sm:py-2.5 flex flex-nowrap items-stretch gap-2 sm:gap-3 bg-black/15" }, [
       prevBtn,
       advanceBtn,
-      el("div", { class: "flex-1 min-w-[2rem]" }),
     ]);
 
     videoWrap.appendChild(header);
@@ -1402,7 +1412,7 @@ function renderFinal() {
         text: momentsTitle,
       }),
       el("p", { class: "mt-2 text-sm sm:text-base leading-relaxed text-[var(--c-neutral)]/78", text: momentsSubtitle }),
-      el("div", { class: "mt-5 flex flex-wrap items-center gap-3" }, [claimMomentsBtn]),
+      el("div", { class: "quest-single-cta mt-5 flex flex-wrap items-center gap-3" }, [claimMomentsBtn]),
     ]
   );
 
@@ -1460,7 +1470,9 @@ function renderFinal() {
     root.appendChild(applyStagger(voucherCard, si++));
   }
 
-  root.appendChild(applyStagger(el("div", { class: "flex flex-wrap items-center gap-3" }, [resetBtn]), si++));
+  root.appendChild(
+    applyStagger(el("div", { class: "quest-single-cta flex flex-wrap items-center gap-3" }, [resetBtn]), si++)
+  );
 
   if (momentsClaimed && !videosComplete) {
     window.setTimeout(mountVideosOnce, 0);
@@ -1527,7 +1539,22 @@ function renderNavRow() {
     "Back"
   );
 
-  return el("div", { class: "flex flex-wrap items-center gap-3" }, [backBtn]);
+  return el("div", { class: "quest-nav-back flex flex-wrap items-center gap-3" }, [backBtn]);
+}
+
+function mergeBackIntoSingleCtaRow(screenRoot, navRow) {
+  if (!screenRoot || !navRow || !navRow.classList.contains("quest-nav-back")) return false;
+  const slot = screenRoot.querySelector(".quest-single-cta");
+  const backBtn = navRow.querySelector("button");
+  if (!slot || !backBtn) return false;
+  navRow.remove();
+  slot.appendChild(backBtn);
+  slot.classList.remove("flex-wrap");
+  slot.classList.add("flex-nowrap", "w-full", "items-stretch");
+  for (const btn of slot.querySelectorAll("button")) {
+    btn.classList.add("flex-1", "min-w-0");
+  }
+  return true;
 }
 
 function render() {
@@ -1555,11 +1582,17 @@ function render() {
     clearFinalPhasePauseTimer();
     clearBetweenVideosTimer();
   }
-  content.appendChild(renderScreen());
+  const screenRoot = renderScreen();
+  content.appendChild(screenRoot);
 
   const nav = renderNavRow();
-  if (nav) content.appendChild(el("div", { style: "height:10px" }));
-  if (nav) content.appendChild(nav);
+  if (nav) {
+    const mergedBack = mergeBackIntoSingleCtaRow(screenRoot, nav);
+    if (!mergedBack) {
+      content.appendChild(el("div", { style: "height:10px" }));
+      content.appendChild(nav);
+    }
+  }
 
   card.appendChild(content);
 
