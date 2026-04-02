@@ -9,14 +9,14 @@ window.CONTENT = {
 
   gate: {
     passcodeLabel: "Enter passcode",
-    passcodeHint: "Tip: something only you two would know.",
-    passcode: "032026",
+    passcodeHint: "Hint: Bature Brewery",
+    passcode: "08032025",
     successTitle: "Access granted",
     successText: "Okay. Let’s begin the quest.",
     // Background music: direct .mp3 URL (Cloudinary). Starts after correct passcode (uses the tap as user gesture for iOS).
     backgroundAudioSrc:
       "https://res.cloudinary.com/dfw7cyzig/video/upload/q_auto/f_auto/v1775140915/Dandelions_Violin_jdt91g.mp3",
-    backgroundAudioVolume: 0.6,
+    backgroundAudioVolume: 0.5,
   },
 
   person: {
