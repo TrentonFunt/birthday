@@ -39,6 +39,114 @@ function clearFinalPhasePauseTimer() {
   }
 }
 
+let betweenVideosTimer = null;
+let birthdayBgAudio = null;
+let birthdayBgAudioStopTimer = null;
+let birthdayAudioEmbedHost = null;
+let bgMusicPreloadStarted = false;
+
+function clearBetweenVideosTimer() {
+  if (betweenVideosTimer) {
+    window.clearTimeout(betweenVideosTimer);
+    betweenVideosTimer = null;
+  }
+}
+
+function clearBirthdayBgAudioStopTimer() {
+  if (birthdayBgAudioStopTimer) {
+    window.clearTimeout(birthdayBgAudioStopTimer);
+    birthdayBgAudioStopTimer = null;
+  }
+}
+
+function stopBirthdayBackgroundAudio() {
+  clearBirthdayBgAudioStopTimer();
+  if (birthdayBgAudio) {
+    birthdayBgAudio.pause();
+    try {
+      birthdayBgAudio.currentTime = 0;
+    } catch (_) {}
+  }
+  if (birthdayAudioEmbedHost) {
+    const frame = birthdayAudioEmbedHost.querySelector("iframe");
+    if (frame) frame.setAttribute("src", "about:blank");
+    birthdayAudioEmbedHost.remove();
+    birthdayAudioEmbedHost = null;
+  }
+}
+
+function preloadBackgroundMusicOnGate() {
+  if (state.unlocked) return;
+  const gate = CONTENT.gate || {};
+  const src = typeof gate.backgroundAudioSrc === "string" ? gate.backgroundAudioSrc.trim() : "";
+  if (!src || bgMusicPreloadStarted) return;
+  bgMusicPreloadStarted = true;
+  if (!birthdayBgAudio) {
+    birthdayBgAudio = new Audio();
+    birthdayBgAudio.preload = "auto";
+    birthdayBgAudio.loop = true;
+    birthdayBgAudio.setAttribute("playsinline", "");
+  }
+  if (birthdayBgAudio.src !== src) {
+    birthdayBgAudio.src = src;
+  }
+  birthdayBgAudio.volume = typeof gate.backgroundAudioVolume === "number" ? gate.backgroundAudioVolume : 0.6;
+  try {
+    birthdayBgAudio.load();
+  } catch (_) {}
+}
+
+function startBirthdayBackgroundAudioFromUserGesture() {
+  const gate = CONTENT.gate || {};
+  const src = typeof gate.backgroundAudioSrc === "string" ? gate.backgroundAudioSrc.trim() : "";
+  if (src) {
+    if (!birthdayBgAudio) {
+      birthdayBgAudio = new Audio();
+      birthdayBgAudio.preload = "auto";
+      birthdayBgAudio.loop = true;
+      birthdayBgAudio.setAttribute("playsinline", "");
+    }
+    if (birthdayBgAudio.src !== src) {
+      birthdayBgAudio.src = src;
+      try {
+        birthdayBgAudio.load();
+      } catch (_) {}
+    }
+    birthdayBgAudio.volume = typeof gate.backgroundAudioVolume === "number" ? gate.backgroundAudioVolume : 0.6;
+    birthdayBgAudio.play().catch(() => {});
+    return;
+  }
+  const embedUrl =
+    typeof gate.backgroundAudioEmbedUrl === "string" ? gate.backgroundAudioEmbedUrl.trim() : "";
+  if (!embedUrl) return;
+  if (!birthdayAudioEmbedHost) {
+    birthdayAudioEmbedHost = document.createElement("div");
+    birthdayAudioEmbedHost.className =
+      "birthday-audio-embed fixed bottom-2 right-2 z-[5] h-[57px] w-[51px] overflow-hidden rounded-lg opacity-[0.38] pointer-events-none shadow-lg";
+    birthdayAudioEmbedHost.setAttribute("aria-hidden", "true");
+    const iframe = document.createElement("iframe");
+    iframe.setAttribute("title", "Background music");
+    iframe.style.cssText =
+      "display:block;border:0;width:204px;height:204px;transform:scale(0.25);transform-origin:top left;";
+    iframe.setAttribute("allow", "autoplay");
+    birthdayAudioEmbedHost.appendChild(iframe);
+    document.body.appendChild(birthdayAudioEmbedHost);
+  }
+  const frame = birthdayAudioEmbedHost.querySelector("iframe");
+  if (frame && !frame.getAttribute("src")) {
+    frame.setAttribute("src", embedUrl);
+  }
+}
+
+function scheduleBirthdayBackgroundAudioStopAfterReveal() {
+  clearBirthdayBgAudioStopTimer();
+  const tailMs = 5000;
+  birthdayBgAudioStopTimer = window.setTimeout(() => {
+    birthdayBgAudioStopTimer = null;
+    stopBirthdayBackgroundAudio();
+  }, tailMs);
+}
+
 function ensureKeyframes() {
   if (document.getElementById("birthdayQuestKeyframes")) return;
   const style = document.createElement("style");
@@ -418,6 +526,10 @@ function resetQuest() {
   celebrationPending = false;
   clearPhotosSlideTimer();
   clearFinalPhasePauseTimer();
+  clearBetweenVideosTimer();
+  stopBirthdayBackgroundAudio();
+  birthdayBgAudio = null;
+  bgMusicPreloadStarted = false;
   if (voucherRevealTimer) {
     window.clearTimeout(voucherRevealTimer);
     voucherRevealTimer = null;
@@ -547,6 +659,7 @@ function renderGate() {
       state.current = "intro";
       saveState();
       status.textContent = gate.successText;
+      startBirthdayBackgroundAudioFromUserGesture();
       setTimeout(() => render(), 350);
       return;
     }
@@ -645,7 +758,6 @@ function renderPhotos() {
   const cards = Array.isArray(cfg.cards) ? cfg.cards : [];
   const idx = clamp(state.photos.idx || 0, 0, Math.max(0, cards.length - 1));
   const card = cards[idx] || { src: "", alt: "Photo", caption: "" };
-  const slideMs = Math.max(2000, typeof cfg.slideDurationMs === "number" ? cfg.slideDurationMs : 5000);
 
   const media = el("div", { class: "bg-black/20 flex items-center justify-center" });
   if (card.src) {
@@ -665,9 +777,9 @@ function renderPhotos() {
   const footer = el("div", { class: "px-3 py-3 sm:p-4 flex items-end justify-between gap-2 sm:gap-3" }, [
     el("div", { class: "min-w-0" }, [
       el("div", { class: "text-[12px] sm:text-[13px] text-[var(--c-neutral)]/60", text: `Photo ${cards.length ? idx + 1 : 0}/${cards.length}` }),
-      el("div", { class: "text-base sm:text-lg font-bold tracking-wide text-[var(--c-neutral)] truncate", text: card.caption || "" }),
+      el("div", { class: "text-base sm:text-lg font-bold tracking-wide text-[var(--c-neutral)] truncate", text: card.caption || "Tap to continue" }),
     ]),
-    el("div", { class: "text-[12px] sm:text-[13px] text-[var(--c-bright)]/80 shrink-0 font-mono uppercase tracking-wider" }, state.photos.done ? "Done" : "Auto"),
+    el("div", { class: "text-[12px] sm:text-[13px] text-[var(--c-neutral)]/60 shrink-0" }, state.photos.done ? "Done" : "Tap"),
   ]);
 
   const photoMotion = "animate-[photoPop_520ms_cubic-bezier(0.22,1,0.36,1)_both]";
@@ -680,10 +792,23 @@ function renderPhotos() {
     stage.appendChild(media);
     stage.appendChild(footer);
   } else {
-    stage = el("div", {
-      class: `w-full overflow-hidden rounded-2xl ${photoMotion}`,
-      "aria-label": "Slideshow",
-      role: "region",
+    stage = el("button", {
+      type: "button",
+      class: `w-full text-left overflow-hidden rounded-2xl active:translate-y-px transition-transform duration-200 ${photoMotion}`,
+      onClick: () => {
+        const next = idx + 1;
+        if (next < cards.length) {
+          state.photos.idx = next;
+          saveState();
+          render();
+          return;
+        }
+        state.photos.done = true;
+        markCompleted("photos");
+        saveState();
+        render();
+      },
+      "aria-label": "Next photo",
     });
     stage.appendChild(media);
     stage.appendChild(footer);
@@ -691,7 +816,7 @@ function renderPhotos() {
 
   const doneHint = state.photos.done
     ? el("div", { class: "text-[13px] text-emerald-200/70" }, "Album complete.")
-    : el("div", { class: "text-[13px] text-[var(--c-neutral)]/60" }, "Photos advance automatically.");
+    : el("div", { class: "text-[13px] text-[var(--c-neutral)]/60" }, "Tap the card for the next photo.");
 
   const nextBtn = state.photos.done
     ? el(
@@ -716,21 +841,6 @@ function renderPhotos() {
   wrap.appendChild(applyStagger(stage, si++));
   wrap.appendChild(applyStagger(doneHint, si++));
   if (nextBtn) wrap.appendChild(applyStagger(el("div", { class: "flex flex-wrap items-center gap-3" }, [nextBtn]), si++));
-
-  if (!state.photos.done && cards.length > 0) {
-    photosSlideTimer = window.setTimeout(() => {
-      photosSlideTimer = null;
-      const next = idx + 1;
-      if (next < cards.length) {
-        state.photos.idx = next;
-      } else {
-        state.photos.done = true;
-        markCompleted("photos");
-      }
-      saveState();
-      render();
-    }, slideMs);
-  }
 
   return wrap;
 }
@@ -952,6 +1062,8 @@ function renderFinal() {
     typeof cfg.pauseAfterVideosMs === "number" ? Math.max(0, cfg.pauseAfterVideosMs) : 1800;
   const pauseAfterCodeMs =
     typeof cfg.pauseAfterCodeMs === "number" ? Math.max(0, cfg.pauseAfterCodeMs) : 1800;
+  const pauseBetweenVideosMs =
+    typeof cfg.pauseBetweenVideosMs === "number" ? Math.max(0, cfg.pauseBetweenVideosMs) : 1200;
 
   function finishVideosPhase() {
     state.final.videosComplete = true;
@@ -987,6 +1099,7 @@ function renderFinal() {
       state.final.ticketVisible = true;
       markCompleted("final");
       saveState();
+      scheduleBirthdayBackgroundAudioStopAfterReveal();
       render();
     }, VOUCHER_REVEAL_DELAY_MS);
   }
@@ -995,6 +1108,7 @@ function renderFinal() {
 
   function mountVideosOnce() {
     if (videoWrap.childNodes.length > 0) return;
+    clearBetweenVideosTimer();
     const list = videoList;
     const vIdx = clamp(state.final.videoIdx || 0, 0, Math.max(0, list.length - 1));
     const v = list[vIdx];
@@ -1031,11 +1145,14 @@ function renderFinal() {
       playsinline: "playsinline",
       preload: "auto",
       autoplay: "autoplay",
+      muted: true,
       src: v.src,
       title: v.title || "Video",
       ...(poster ? { poster: poster } : {}),
     });
     video.className = "w-full max-h-[50vh] block bg-black";
+    video.defaultMuted = true;
+    video.muted = true;
 
     video.addEventListener("loadeddata", () => {
       video.play().catch(() => {});
@@ -1047,9 +1164,19 @@ function renderFinal() {
         scheduleFinishVideosPhase();
         return;
       }
-      state.final.videoIdx = next;
-      saveState();
-      render();
+      clearBetweenVideosTimer();
+      if (pauseBetweenVideosMs === 0) {
+        state.final.videoIdx = next;
+        saveState();
+        render();
+        return;
+      }
+      betweenVideosTimer = window.setTimeout(() => {
+        betweenVideosTimer = null;
+        state.final.videoIdx = next;
+        saveState();
+        render();
+      }, pauseBetweenVideosMs);
     });
 
     const btnClass =
@@ -1062,6 +1189,7 @@ function renderFinal() {
         type: "button",
         disabled: vIdx === 0,
         onClick: () => {
+          clearBetweenVideosTimer();
           state.final.videoIdx = Math.max(0, vIdx - 1);
           saveState();
           render();
@@ -1087,6 +1215,7 @@ function renderFinal() {
             class: btnClass,
             type: "button",
             onClick: () => {
+              clearBetweenVideosTimer();
               state.final.videoIdx = Math.min(list.length - 1, vIdx + 1);
               saveState();
               render();
@@ -1405,6 +1534,10 @@ function render() {
   const app = document.getElementById("app");
   if (!app) return;
 
+  if (!state.unlocked) {
+    preloadBackgroundMusicOnGate();
+  }
+
   document.title = `Happy Birthday — ${CONTENT.person.name}`;
 
   const card = el("div", {
@@ -1420,6 +1553,7 @@ function render() {
   }
   if (state.current !== "final") {
     clearFinalPhasePauseTimer();
+    clearBetweenVideosTimer();
   }
   content.appendChild(renderScreen());
 
